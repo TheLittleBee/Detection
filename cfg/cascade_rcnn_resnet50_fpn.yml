@@ -1,0 +1,121 @@
+model:
+  type: 'CascadeRCNN'
+  background: True
+  backbone:
+    type: 'resnet50'
+    freeze: 2
+  anchor_cfg:
+    pyramid: [2,3,4,5]
+    scales: [1]
+    ratios: [0.5,1,2]
+  neck:
+    type: 'FPN'
+    inps: [256, 512, 1024, 2048]
+    oup: 256
+    extra_num: 0
+    extra_conv: False
+    on_inp: False
+  rpn:
+    type: 'RPNHead'
+    in_channels: 256
+    num_anchors: 3
+    cfg:
+      train_pre_n: 2000
+      train_post_n: 2000
+      test_pre_n: 1000
+      test_post_n: 1000
+      pos_iou_thr: 0.7
+      neg_iou_thr: 0.3
+      min_size: 32
+      num: 256
+      pos_fraction: 0.5
+      nms_thresh: 0.7
+  roi:
+    type: 'RoIAlign'
+    output_size: 7
+    scales: [0.25,0.125,0.0625,0.03125]
+    sample_ratio: 2
+  head:
+    stage1:
+      type: 'RoIBoxHead'
+      in_channels: 256
+      resolution: 7
+      fc_size: 1024
+      cfg:
+        pos_iou_thr: 0.5
+        neg_iou_thr: 0.5
+        num: 512
+        pos_fraction: 0.3
+        coder_w: [10,10,5,5]
+    stage2:
+      type: 'RoIBoxHead'
+      in_channels: 256
+      resolution: 7
+      fc_size: 1024
+      cfg:
+        pos_iou_thr: 0.6
+        neg_iou_thr: 0.6
+        num: 512
+        pos_fraction: 0.3
+        coder_w: [20,20,10,10]
+    stage3:
+      type: 'RoIBoxHead'
+      in_channels: 256
+      resolution: 7
+      fc_size: 1024
+      cfg:
+        pos_iou_thr: 0.7
+        neg_iou_thr: 0.7
+        num: 512
+        pos_fraction: 0.3
+        coder_w: [30,30,15,15]
+
+train:
+  gpus: "6"
+  nworkers: 6
+  pin_mem: True
+
+  clear: False
+
+  optimizer:
+    base_lr: 0.001
+    bias_lr_factor: 2
+    momentum: 0.9
+    weight_decay: 0.0005
+    bias_weight_decay: 0
+
+  scheduler:
+    type: "steps"
+    warmup_iters: 500
+    warmup_factor: 0.33
+    warmup_method: "linear"
+    gamma: 0.1
+    milestones: [4000, 10000, 20000]
+
+  max_batches: 50200
+  resize_interval: 10
+
+  backup_interval: 30
+  backup_steps: [1000]
+  backup_rates: [10000]
+  backup_dir: "backup/"
+
+  input_size: [512, 512]
+  batch_size: 64
+  mini_batch_size: 1
+  weights:
+
+test:
+  gpus: "3"
+  nworkers: 1
+  pin_mem: True
+
+  input_size: [416, 416]
+  batch_size: 1
+
+  conf_thresh: 0.05
+  nms_thresh: 0.4
+  ignore_thresh: 0.5
+  num_detect: 100
+
+  results: "results"

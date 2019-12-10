@@ -1,0 +1,74 @@
+model:
+  type: 'SSD'
+  background: True
+  backbone:
+    type: 'vgg16'
+    freeze: 0
+  strides: [8,16,32,64,100,300]
+  anchors_ratios: [[2,3],[2,3],[2,3],[2,3],[2],[2]]
+  size_ratios: [0.2,0.9]
+  head:
+    type: 'SSDVGG'
+    input_size: 300
+    in_channels: [512,1024,512,256,256,256]
+    num_anchors: [6,6,6,6,4,4]
+    cfg:
+      pos_iou_thr: 0.5
+      neg_iou_thr: 0.5
+      neg_pos_ratio: 3
+
+norm:
+  mean: [123.,117.,104.]
+  std: [1.,1.,1.]
+
+train:
+  gpus: "6"
+  nworkers: 6
+  pin_mem: True
+
+  clear: False
+
+  optimizer:
+    base_lr: 0.000015625
+    bias_lr_factor: 2
+    momentum: 0.9
+    weight_decay: 0.032
+    bias_weight_decay: 0
+
+  scheduler:
+    type: "steps"
+    # type: "cos"
+    warmup_iters: 1000
+    warmup_factor: 0.1
+    warmup_method: "linear"
+    # eta_min: 0.000001
+    gamma: 0.1
+    milestones: [7000, 8500, 9500]
+
+  max_batches: 10000
+  resize_interval: 0
+
+  backup_interval: 20
+  backup_steps: [1000]
+  backup_rates: [10000]
+  backup_dir: "backup/"
+
+  input_size: [300, 300]
+  batch_size: 64
+  mini_batch_size: 4
+  weights: "weights/vgg16.features"
+
+test:
+  gpus: "3"
+  nworkers: 1
+  pin_mem: True
+
+  input_size: [300, 300]
+  batch_size: 1
+
+  conf_thresh: 0.5
+  nms_thresh: 0.4
+  ignore_thresh: 0.5
+  num_detect: 100
+
+  results: "results"

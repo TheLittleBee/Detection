@@ -1,0 +1,65 @@
+model:
+  type: 'YOLO'
+  background: False
+  backbone:
+    type: 'DarkNet53'
+    freeze: 0
+  anchors: [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+  anchors_mask: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+  head:
+    type: 'YOLOv3'
+    in_channels: [1024, 512, 256]
+    num_anchors: [3,3,3]
+
+train:
+  gpus: "6"
+  nworkers: 6
+  pin_mem: True
+
+  clear: False
+
+  optimizer:
+    base_lr: 0.000015625
+    bias_lr_factor: 2
+    momentum: 0.9
+    weight_decay: 0.032
+    bias_weight_decay: 0
+
+  scheduler:
+    type: "step"
+    warmup_iters: 1000
+    warmup_factor: 0.1
+    warmup_method: "linear"
+#    eta_min: 0.0000001
+    gamma: 0.1
+    milestones: [5000, 5500, 6000]
+
+  max_batches: 4000
+  resize_interval: 0
+
+  backup_interval: 20
+  backup_steps: [1000]
+  backup_rates: [10000]
+  backup_dir: "backup/"
+
+  input_size: [416, 416]
+  batch_size: 64
+  mini_batch_size: 4
+  weights: "weights/darknet53.features"
+
+test:
+  stdout: True
+  gpus: "3"
+  nworkers: 4
+  pin_mem: True
+
+  input_size: [416, 416]
+  batch_size: 1
+  weights: "weights/yolov3.pth"
+
+  conf_thresh: 0.05
+  nms_thresh: 0.4
+  ignore_thresh: 0.5
+  num_detect: 100
+
+  results: "results"

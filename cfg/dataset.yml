@@ -1,0 +1,101 @@
+VOC:
+  classes_num: 20
+  labels: ["aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable","dog","horse",
+           "motorbike","person","pottedplant","sheep","sofa","train","tvmonitor"]
+  root: "data/VOC2007/"
+  train:
+    image_directory: "JPEGImages/"
+    annotation_file: "annotations_train2007.pkl"
+#    annotation_file: ["annotations_train2007.pkl","annotations_val2007.pkl"]
+    transform:
+      crop: 0.3
+      flip: 0.5
+      saturation: 1.5
+      exposure: 1.5
+      hue: 0.1
+  test:
+    image_directory: "JPEGImages/"
+    annotation_file: "annotations_val2007.pkl"
+#    annotation_file: "annotations_test2007.pkl"
+
+COCO:
+  classes_num: 80
+  labels: [
+    "person", "bicycle", "car", "motorcycle", "airplane",
+    "bus", "train", "truck", "boat", "traffic light", "fire hydrant",
+    "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse",
+    "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack",
+    "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis",
+    "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+    "skateboard", "surfboard", "tennis racket", "bottle", "wine glass",
+    "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich",
+    "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
+    "chair", "couch", "potted plant", "bed", "dining table", "toilet", "tv",
+    "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave",
+    "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
+    "scissors", "teddy bear", "hair drier", "toothbrush"
+  ]
+  root: "data/COCO/"
+  train:
+    image_directory: "train2017/"
+    annotation_file: "annotations/"
+    transform:
+  test:
+    image_directory: "val2017/"
+    annotation_file: "annotations/"
+
+LAB:
+  classes_num: 3
+  labels: ["car","person","tank"]
+  root: "data/LAB/"
+  train:
+    image_directory: "images/"
+    annotation_file: "annotations_train.pkl"
+    transform:
+      crop: 0.3
+      flip: 0.5
+      saturation: 1.5
+      exposure: 1.5
+      hue: 0.1
+  test:
+    image_directory: "images/"
+    annotation_file: "annotations_test.pkl"
+
+CBCL:
+  classes_num: 2
+  labels: ["car","pedestrian"]
+  root: "data/CBCL/"
+
+CITY:
+  classes_num: 8
+  labels: ["car", "person", "bicycle", "rider", "motorcycle", "bus", "truck", "train"]
+  root: "data/Cityscapes/"
+  train:
+    image_directory: "leftImg8bit/train/"
+    annotation_file: "annotations/instancesonly_filtered_gtFine_train.json"
+    transform:
+      crop: 0.3
+      flip: 0.5
+      saturation: 1.5
+      exposure: 1.5
+      hue: 0.1
+  test:
+    image_directory: "leftImg8bit/val/"
+    annotation_file: "annotations/instancesonly_filtered_gtFine_val.json"
+
+KITTI:
+  classes_num: 8
+  labels: ["person", "Truck", "car", "Cyclist", "Misc", "Van", "Tram", "Person_sitting"]
+  root: "data/KITTI/"
+  train:
+    image_directory: "JPEGImages/"
+    annotation_file: "annotations_train.pkl"
+    transform:
+      crop: 0.3
+      flip: 0.5
+      saturation: 1.5
+      exposure: 1.5
+      hue: 0.1
+  test:
+    image_directory: "JPEGImages/"
+    annotation_file: "annotations_val.pkl"

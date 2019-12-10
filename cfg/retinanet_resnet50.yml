@@ -1,0 +1,68 @@
+model:
+  type: 'RetinaNet'
+  background: True
+  backbone:
+    type: 'resnet50'
+    freeze: 2
+  pyramid: [3,4,5,6]
+  neck:
+    type: 'FPN'
+    inps: [512,1024,2048]
+    oup: 256
+    extra_num: 1
+    extra_conv: True
+    on_inp: True
+  head:
+    type: 'RetinaHead'
+    num_anchors: 9
+
+train:
+  gpus: "6"
+  nworkers: 4
+  pin_mem: True
+
+  clear: False
+
+  optimizer:
+    base_lr: 0.001
+    bias_lr_factor: 2
+    momentum: 0.9
+    weight_decay: 0.0005
+    bias_weight_decay: 0
+
+  scheduler:
+    type: "cos"
+    warmup_iters: 500
+    warmup_factor: 0.33
+    warmup_method: "linear"
+    eta_min: 0.000001
+#    gamma: 0.1
+#    milestones: [3000, 4500, 6000]
+
+  max_batches: 12000
+  resize_interval: 10
+
+  backup_interval: 20
+  backup_steps: [1000]
+  backup_rates: [10000]
+  backup_dir: "backup/"
+
+  input_size: [416, 416]
+  batch_size: 32
+  mini_batch_size: 4
+  weights:
+
+test:
+  gpus: "3"
+  nworkers: 1
+  pin_mem: True
+
+  input_size: [416, 416]
+  batch_size: 4
+
+  conf_thresh: 0.05
+  nms_thresh: 0.4
+  ignore_thresh: 0.5
+  num_detect: 100
+
+  results: "results"
