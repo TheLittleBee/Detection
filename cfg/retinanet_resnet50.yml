@@ -31,15 +31,16 @@ train:
     bias_weight_decay: 0
 
   scheduler:
-    type: "cos"
-    warmup_iters: 500
-    warmup_factor: 0.33
+    type: "steps"
+#    type: "cos"
+    warmup_iters: 400
+    warmup_factor: 0.1
     warmup_method: "linear"
-    eta_min: 0.000001
-#    gamma: 0.1
-#    milestones: [3000, 4500, 6000]
+#    eta_min: 0.00001
+    gamma: 0.1
+    milestones: [4000, 6000]
 
-  max_batches: 12000
+  max_batches: 7200
   resize_interval: 10
 
   backup_interval: 20

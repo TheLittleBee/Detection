@@ -29,23 +29,23 @@ train:
   clear: False
 
   optimizer:
-    base_lr: 0.000015625
+    base_lr: 0.001
     bias_lr_factor: 2
     momentum: 0.9
-    weight_decay: 0.032
+    weight_decay: 0.0005
     bias_weight_decay: 0
 
   scheduler:
     type: "steps"
-    # type: "cos"
-    warmup_iters: 1000
+#    type: "cos"
+    warmup_iters: 400
     warmup_factor: 0.1
     warmup_method: "linear"
-    # eta_min: 0.000001
+#    eta_min: 0.00001
     gamma: 0.1
-    milestones: [7000, 8500, 9500]
+    milestones: [4000, 6000]
 
-  max_batches: 10000
+  max_batches: 7200
   resize_interval: 0
 
   backup_interval: 20

@@ -162,10 +162,10 @@ class TrainEngine():
         for key, value in model.named_parameters():
             if not value.requires_grad:
                 continue
-            lr = self.optim_cfg['base_lr']
+            lr = self.optim_cfg['base_lr'] / self.subdivision
             weight_decay = self.optim_cfg['weight_decay']
             if "bias" in key:
-                lr = self.optim_cfg['base_lr'] * self.optim_cfg['bias_lr_factor']
+                lr = self.optim_cfg['base_lr'] * self.optim_cfg['bias_lr_factor'] / self.subdivision
                 weight_decay = self.optim_cfg['bias_weight_decay']
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
 

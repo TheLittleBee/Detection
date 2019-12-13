@@ -5,3 +5,4 @@ visdom
 pycocotools
 tensorboardX>=1.7
 opencv-python
+tqdm
