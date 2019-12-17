@@ -11,3 +11,4 @@ from .maskhead import MaskHead
 from .yolov3_shuffle import YOLOv3_Shuffle
 from .yolov3_tiny_aspp import TinyYOLOv3ASPP
 from .yolov3_tiny_attention import TinyYOLOv3Att
+from .yolov3_mobilessd import YOLOv3MobileSSD

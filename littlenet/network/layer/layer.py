@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Conv2dBatch(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, leaky_slope=0.1):
+    def __init__(self, in_channels, out_channels, kernel_size, stride):
         super(Conv2dBatch, self).__init__()
 
         # Parameters

@@ -2,14 +2,20 @@ model:
   type: 'YOLO'
   background: False
   backbone:
-    type: 'TinyYOLOv3'
+    type: 'MobileNetv2SSD'
     freeze: 0
+  # original anchors
   anchors: [[10, 14], [23, 27], [37, 58], [81, 82], [135, 169], [344, 319]]
+  # cluster anchors
+#  anchors: [[26, 23], [23, 53], [52, 37], [45, 102], [94, 64], [140, 140]]
+#  anchors: [[32, 36], [40, 87], [91, 66], [80, 189], [192, 138], [317, 323]]
   anchors_mask: [[3, 4, 5], [0, 1, 2]]
+#  anchors: [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+#  anchors_mask: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
   head:
-    type: 'TinyYOLOv3Att'
-    in_channels: [256, 256]
-    num_anchors: [3, 3]
+    type: 'YOLOv3_Mobile'
+    in_channels: [1280,576]
+    num_anchors: [3,3]
 
 train:
   gpus: "6"
@@ -46,7 +52,7 @@ train:
   input_size: [416, 416]
   batch_size: 64
   mini_batch_size: 4
-  weights: "weights/TinyYOLOv3.features"
+  weights: "weights/mobilenetv2ssd.features"
 
 test:
   gpus: "3"
@@ -55,7 +61,6 @@ test:
 
   input_size: [416, 416]
   batch_size: 1
-  weights: "weights/TinyYOLOv3_LAB_fine.pth"
 
   conf_thresh: 0.05
   nms_thresh: 0.4

@@ -95,8 +95,8 @@ class MobileNetv2SSD(nn.Module, Backbone):
                 input_channel = output_channel
             bottleneck.append(nn.Sequential(*features))
         layer19 = nn.Sequential(
-            nn.Conv2d(input_channel, 1280 * width_mult, 1, bias=False),
-            nn.BatchNorm2d(1280 * width_mult),
+            nn.Conv2d(input_channel, int(1280 * width_mult), 1, bias=False),
+            nn.BatchNorm2d(int(1280 * width_mult)),
             nn.ReLU(inplace=True),
         )
         layer_list = [
@@ -130,7 +130,7 @@ class MobileNetv2SSD(nn.Module, Backbone):
         stage2 = self.layers[1](stage1)
         stage3 = self.layers[2](stage2)
         conv4 = self.layers[3](stage3)
-        layer15, stage4 = self.layers[4](conv4, True)
+        layer15, stage4 = self.layers[4][0](conv4, ex=True)
         conv5 = self.layers[5](layer15)
         stage5 = self.layers[6](conv5)
 
