@@ -1,0 +1,17 @@
+model:
+  type: 'YOLO'
+  background: False
+  backbone:
+    type: 'TinyYOLOv3'
+    freeze: 0
+  anchors: [[10, 14], [23, 27], [37, 58], [81, 82], [135, 169], [344, 319]]
+  anchors_mask: [[3, 4, 5], [0, 1, 2]]
+  head:
+    type: 'TinyYOLOv3'
+    in_channels: [256, 256]
+    num_anchors: [3, 3]
+  rnn:
+    type: 'ConvLSTM'
+    in_channels: 256
+    filter_size: 3
+    num_features: 256
