@@ -58,6 +58,7 @@ class YOLO(Littlenet):
         if hasattr(self, 'rnn'):
             features = list(features)
             features[0] = self.rnn(features[0])
+            self.meta['rnn'] = self.rnn.hidden_state
         output = self.head(features)
         if hasattr(self.head, 'meta'):
             self.meta.update(self.head.meta)

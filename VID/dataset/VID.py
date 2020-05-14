@@ -60,7 +60,7 @@ class VIDDataset(Dataset):
     def eval(self, n_cls, pred):
         dets = []
         annos = []
-        for k in pred:
+        for k in self.keys:
             dets += pred[k]
             annos += [label_to_box(np.array(ann), self.img_size[k]) for ann in self.annos[k]]
         ap, p, r = voceval(n_cls, dets, annos)

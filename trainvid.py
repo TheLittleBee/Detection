@@ -14,16 +14,18 @@ import VID.dataset as dt
 from VID.models.yolo import YOLO
 from engine.lr_scheduler import *
 
+trainanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_train.pkl'
+trainimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/train'
+valanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_val.pkl'
+valimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/val'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model')
     parser.add_argument('-m', '--md', dest='model', type=str, required=True, help='Model config file')
     parser.add_argument('-w', '--weight', dest='weight', type=str, help='Initial weight file')
-    parser.add_argument('--epochs', type=int, default=100, help='Training epochs')
     parser.add_argument('--seq', type=int, default=10, help='Sequence number')
     parser.add_argument('--skip', type=int, default=2, help='Skip frames')
-    parser.add_argument('--batch', type=int, default=4, help='batch size')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('-v', '--visual', dest='visual', action='store_true', help='Use Visdom to log')
     parser.add_argument('-b', '--board', dest='board', action='store_true', help='Use tensorboard to log')
     parser.add_argument('-s', '--seed', dest='seed', type=int, default=0, help='Set random seed')
@@ -36,8 +38,7 @@ args = parse_args()
 cuda = torch.cuda.is_available()
 model_name = path.basename(args.model).split('.')[0]
 backup_dir = 'backup/'
-backup = 10
-nworkers = 4
+nworkers = 8
 logger = setup_logger(model_name, 'log/')
 logger.info(args)
 
@@ -56,58 +57,74 @@ if args.board:
 with open(args.model, 'r') as fp:
     cfg = yaml.load(fp)
 model_cfg = cfg['model']
+train_cfg = cfg['train']
 assert model_cfg.pop('type') == 'YOLO'
 bg = model_cfg.pop('background')
-model_cfg['weights'] = None if args.weight.endswith('.ckpt') else args.weight
+model_cfg['weights'] = train_cfg['weights']
 model_cfg['head']['num_classes'] = 31 if bg else 30
 net = YOLO(**model_cfg)
-if cuda: net.cuda()
+if cuda:
+    net.cuda()
 net.train()
 
-trainanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_train.pkl'
-trainimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/train'
-transform = tf.Compose([dt.HFlip(), dt.Resize_Pad(416), dt.ToTensor()])
+lr = train_cfg['lr']
+momentum = train_cfg['momentum']
+weight_decay = train_cfg['weight_decay']
+warmup_iters = train_cfg['warmup_iters']
+milestones = train_cfg['milestones']
+max_batches = train_cfg['max_batches']
+batch_size = train_cfg['batch_size']
+
+if args.seq == 1:
+    transform = tf.Compose([dt.HFlip(), dt.ColorJitter(1.5, 1.5, .1), dt.RC((416, 416), 0.3), dt.ToTensor()])
+else:
+    transform = tf.Compose([dt.HFlip(), dt.ColorJitter(1.5, 1.5, .1), dt.Resize_Pad(416), dt.ToTensor()])
 traindata = dt.VIDDataset(trainanns, trainimg, args.seq, args.skip, transform)
 dataloader = DataLoader(
     traindata,
-    args.batch,
+    batch_size,
     shuffle=True,
     drop_last=True,
     num_workers=nworkers if cuda else 0,
-    # pin_memory=pin_mem if cuda else False,
+    pin_memory=True if cuda else False,
     collate_fn=dt.list_collate,
 )
 if args.val:
-    valanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_val.pkl'
-    valimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/val'
     transform = tf.Compose([dt.Resize_Pad(416), dt.ToTensor()])
     valdata = dt.VIDDataset(valanns, valimg, args.seq, args.skip, transform)
     valloader = DataLoader(
         valdata,
-        batch_size=args.batch,
+        batch_size=batch_size,
         num_workers=nworkers if cuda else 0,
-        # pin_memory=pin_mem if cuda else False,
+        pin_memory=True if cuda else False,
         collate_fn=dt.list_collate,
     )
+ndata = len(dataloader)
 
-optim = torch.optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=0.0005)
-scheduler = WarmupMultiStepLR(optim, [round(args.epochs * 0.8)], warmup_epoch=5)
-if args.weight.endswith('.ckpt'):
-    state = torch.load(args.weight)
-    net.seen = state['seen']
-    net.load_state_dict(state['net'])
-    optim.load_state_dict(state['optim'])
-    scheduler.load_state_dict(state['sche'])
-sepoch = round(net.seen / args.batch / len(dataloader))
+optim = torch.optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+scheduler = WarmupMultiStepLR(optim, milestones, warmup_epoch=warmup_iters)
+if args.weight is not None:
+    if args.weight.endswith('.ckpt'):
+        state = torch.load(args.weight)
+        net.seen = state['seen']
+        net.load_state_dict(state['net'])
+        optim.load_state_dict(state['optim'])
+        scheduler.load_state_dict(state['sche'])
+    elif args.weight.endswith('.pth'):
+        state = torch.load(args.weight, map_location='cpu')
+        net.load_state_dict(state['weights'], strict=False)
+sepoch = round(net.seen / batch_size / ndata)
+epochs = round(max_batches / ndata)
 
 logger.info('Start training!')
-for epoch in range(sepoch, args.epochs):
+for epoch in range(sepoch, epochs):
     epochtic = time.time()
-    scheduler.step()
     optim.zero_grad()
     losslog = {}
     with tqdm(dataloader) as loader:
         for batch_i, sample in enumerate(loader):
+            nbatch = batch_i + ndata * epoch
+            scheduler.step()
             imgs, targets = sample['img'], sample['label']
             if cuda:
                 imgs = imgs.cuda()
@@ -120,7 +137,7 @@ for epoch in range(sepoch, args.epochs):
                 losslog.update(net.log)
             else:
                 for k in losslog.keys():
-                    losslog[k] += net.log[k]
+                    losslog[k] = (losslog[k] * batch_i + net.log[k]) / (batch_i + 1)
             logstr = 'lr: %f' % optim.param_groups[0]['lr']
             for k, v in net.log.items():
                 logstr += ' %s: %.4f' % (k, v)
@@ -130,8 +147,14 @@ for epoch in range(sepoch, args.epochs):
             optim.step()
             optim.zero_grad()
 
-            if batch_i % 100 == 0:
+            if nbatch % 100 == 0 or batch_i + 1 == ndata:
                 net.save_weights('{}{}_{}_fine.pth'.format(backup_dir, model_name, 'VID'))
+                if visual:
+                    visual.line(losslog, nbatch)
+
+                if board:
+                    for k, v in losslog.items():
+                        board.add_scalar(k, v, nbatch)
 
     epochtoc = time.time()
 
@@ -144,30 +167,24 @@ for epoch in range(sepoch, args.epochs):
     torch.save(state, '{}{}_{}.ckpt'.format(backup_dir, model_name, 'VID'))
     logstr = 'lr: %f' % optim.param_groups[0]['lr']
     for k, v in losslog.items():
-        logstr += ' %s: %.4f' % (k, v / len(dataloader))
+        logstr += ' %s: %.4f' % (k, v)
     logger.info('Epoch %d finished, ' % (epoch) + logstr)
-    if visual:
-        visual.line(losslog, epoch)
 
-    if board:
-        for k, v in losslog.items():
-            board.add_scalar(k, v, epoch)
+    net.save_weights('{}{}_{}_{}.pth'.format(backup_dir, model_name, 'VID', epoch))
 
-    if epoch % backup == 0:
-        net.save_weights('{}{}_{}_{}.pth'.format(backup_dir, model_name, 'VID', epoch))
-
-    if args.val and epoch % 20 == 0:
+    if args.val and epoch % 2 == 0:
         valloss = 0
         for sample in valloader:
             img, target = sample['img'], sample['label']
             if cuda: img = img.cuda()
+            net.clear()
             with torch.no_grad():
                 valloss += net(img, target).item()
         logger.info('Epoch %d val loss: %.4f' % (epoch, valloss / len(valloader)))
         if visual:
-            visual.line({'val': valloss / len(valloader)}, epoch)
+            visual.line({'val': valloss / len(valloader)}, nbatch)
         if board:
-            board.add_scalar('val', valloss / len(valloader), epoch)
+            board.add_scalar('val', valloss / len(valloader), nbatch)
     gc.collect()
 board.close()
 net.save_weights('{}{}_{}_final.pth'.format(backup_dir, model_name, 'VID'))

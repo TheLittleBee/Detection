@@ -26,9 +26,10 @@ class CGRU_cell(nn.Module):
         self.hidden_state = None
 
     def forward(self, inputs):
+        device = inputs.device
         if self.hidden_state is None:
             htprev = torch.zeros(inputs.size(0), self.num_features,
-                                 inputs.size(2), inputs.size(3)).cuda()
+                                 inputs.size(2), inputs.size(3)).to(device)
         else:
             htprev = self.hidden_state
         x = inputs
@@ -74,13 +75,13 @@ class CLSTM_cell(nn.Module):
         self.hidden_state = None
 
     def forward(self, inputs):
-        #  seq_len=10 for moving_mnist
+        device = inputs.device
         if self.hidden_state is None:
-            hx = torch.zeros(inputs.size(0), self.num_features, inputs.size(2), inputs.size(3)).cuda()
+            hx = torch.zeros(inputs.size(0), self.num_features, inputs.size(2), inputs.size(3)).to(device)
         else:
             hx = self.hidden_state
         if self.forget_state is None:
-            cx = torch.zeros(inputs.size(0), self.num_features, inputs.size(2), inputs.size(3)).cuda()
+            cx = torch.zeros(inputs.size(0), self.num_features, inputs.size(2), inputs.size(3)).to(device)
         else:
             cx = self.forget_state
         x = inputs

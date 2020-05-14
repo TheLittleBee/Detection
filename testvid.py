@@ -15,6 +15,8 @@ import VID.dataset as dt
 from VID.models.yolo import YOLO
 from littlenet.utils.bbox import clip2img
 
+valanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_val.pkl'
+valimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/val'
 classes = ["airplane", "antelope", "bear", "bicycle", "bird", "bus", "car",
            "cattle", "dog", "domestic_cat", "elephant", "fox", "giant_panda",
            "hamster", "horse", "lion", "lizard", "monkey", "motorcycle", "rabbit",
@@ -56,8 +58,6 @@ net = YOLO(**model_cfg)
 if cuda: net.cuda()
 net.eval()
 
-valanns = '/home/littlebee/dataset/VID/ILSVRC2015/annotations_val.pkl'
-valimg = '/home/littlebee/dataset/VID/ILSVRC2015/Data/VID/val'
 transform = tf.Compose([dt.Resize_Pad(416), dt.ToTensor()])
 if args.keepsize:
     transform = tf.Compose([dt.ToTensor()])
@@ -92,9 +92,15 @@ for _, sample in enumerate(tqdm(valloader)):
     det = det[0].cpu().numpy() if det[0] is not None else None
     if not args.keepsize: det = reorg(det, valdata.img_size[id], (416, 416))
     if args.visual:
+        oup = net.meta['rnn'][0].norm(p=2,dim=0,keepdim=True).cpu().numpy()
+        oup_c = debuger.gen_colormap(oup)
+        back = img[0].squeeze(0).detach().cpu().numpy() * 255
+        debuger.add_blend_img(np.transpose(back, (1, 2, 0)), oup_c, img_id='rnn')
+        # debuger.show_img(img_id='rnn', pause=1)
         img_ori = cv2.imread(path.join(valimg, id, '{:0>6}.JPEG'.format(len(all_det[id]))))
-        debuger.add_2d_detection(img_ori, det, thresh=0.1, img_id=id)
-        debuger.show_img(img_id=id)
+        debuger.add_2d_detection(img_ori, det, thresh=0.1, img_id='det')
+        # debuger.show_img(img_id='det', pause=1)
+        debuger.show_all_imgs()
     all_det[id].append(det)
 
 print(time.strftime('%Y-%m-%d %H:%M:%S ', time.localtime()) + 'Now computing AP')

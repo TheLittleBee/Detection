@@ -10,3 +10,17 @@ model:
     type: 'TinyYOLOv3'
     in_channels: [256, 256]
     num_anchors: [3, 3]
+
+train:
+  lr: 0.001
+  momentum: 0.9
+  weight_decay: 0.0005
+
+  warmup_iters: 1000
+  milestones: [400000, 450000]
+
+  max_batches: 500500
+
+  batch_size: 64
+
+  weights: "weights/TinyYOLOv3.features"

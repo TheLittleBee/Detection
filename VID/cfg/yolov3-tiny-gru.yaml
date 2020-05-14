@@ -11,7 +11,7 @@ model:
     in_channels: [256, 256]
     num_anchors: [3, 3]
   rnn:
-    type: 'ConvLSTM'
+    type: 'ConvGRU'
     in_channels: 256
     filter_size: 3
     num_features: 256

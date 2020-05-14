@@ -73,7 +73,7 @@ def voceval(n_cls, dets, annos, ignore_thresh=.5, conf=.5):
         for detections, annotations in zip(dets, annos):
             if detections is None: continue
             detections = detections[detections[:, -1] == label]
-            if len(annotations): annotations = annotations[annotations[:, 0] == label]
+            if len(annotations): annotations = annotations[annotations[:, 4] == label]
 
             num_annotations += len(annotations)  # .shape[0]
             detected_annotations = []
@@ -81,16 +81,16 @@ def voceval(n_cls, dets, annos, ignore_thresh=.5, conf=.5):
             if len(detections) == 0: continue
             if len(annotations) == 0:
                 for j in range(len(detections)):
-                    scores.append(detections[j, 1])
+                    scores.append(detections[j, -2])
                     true_positives.append(0)
                 continue
 
             # The det whose iou is the largest seems the true positive
-            overlaps = bbox_iou_numpy(detections[:, :4], annotations[:, 1:5])
+            overlaps = bbox_iou_numpy(detections[:, :4], annotations[:, :4])
             assigned_dets = np.argmax(overlaps, axis=0)
 
             for j in range(len(detections)):
-                scores.append(detections[j, 1])
+                scores.append(detections[j, -2])
 
                 assigned_det = assigned_dets[j]
                 max_overlap = overlaps[assigned_det, j]
